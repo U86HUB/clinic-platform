@@ -1,41 +1,27 @@
-import { GetServerSideProps } from 'next';
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
+'use client';
 
-export const getServerSideProps: GetServerSideProps = async (context) => {
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name) {
-          return context.req.cookies[name] ?? null;
-        },
-      },
+import { useSession } from '@supabase/auth-helpers-react';
+import { useRouter } from 'next/router';
+import { useEffect } from 'react';
+
+export default function ProtectedPage() {
+  const session = useSession();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!session) {
+      router.replace('/auth');
     }
-  );
-
-  const { data: { session } } = await supabase.auth.getSession();
+  }, [session]);
 
   if (!session) {
-    return {
-      redirect: {
-        destination: '/',
-        permanent: false,
-      },
-    };
+    return <div className="p-4">Redirecting to login…</div>;
   }
 
-  return {
-    props: { user: session.user },
-  };
-};
-
-export default function ProtectedPage({ user }: { user: any }) {
   return (
-    <div>
-      <h1>Welcome, {user.email}</h1>
-      <p>This page is protected by server-side authentication.</p>
+    <div className="p-8">
+      <h1 className="text-3xl">Welcome to the Protected Page</h1>
+      <p>This page is protected by client-side authentication.</p>
     </div>
   );
 }
